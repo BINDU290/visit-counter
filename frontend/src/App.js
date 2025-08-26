@@ -5,7 +5,18 @@ import { PieChart, Pie, Cell, Tooltip } from "recharts";
 function App() {
   const [data, setData] = useState(null);
 
-  const fetchVisit = () => {
+  // ✅ Only fetch stats (no increment)
+  const fetchStats = () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+    axios
+      .get(`http://localhost:5000/stats?user_id=${userId}`)
+      .then((res) => setData(res.data))
+      .catch((err) => console.error("❌ API Error:", err));
+  };
+
+  // ✅ Increment visit (for first load or simulate)
+  const incrementVisit = () => {
     const userId = localStorage.getItem("userId");
     axios
       .post("http://localhost:5000/visit", { user_id: userId })
@@ -17,9 +28,14 @@ function App() {
   };
 
   useEffect(() => {
-    fetchVisit();
-    const interval = setInterval(fetchVisit, 5000); // auto refresh every 5s
-    return () => clearInterval(interval);
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      // returning user → just get stats
+      fetchStats();
+    } else {
+      // first-time visitor → increment
+      incrementVisit();
+    }
   }, []);
 
   const handleReset = () => {
@@ -90,47 +106,54 @@ function App() {
         </div>
 
         {/* Pie Chart (centered) */}
-<div style={{ display: "flex", justifyContent: "center", marginBottom: "25px" }}>
-  <PieChart width={320} height={280}>
-    <Pie
-      data={chartData}
-      cx="50%"
-      cy="50%"
-      outerRadius={90}
-      fill="#8884d8"
-      dataKey="value"
-      label
-    >
-      {chartData.map((entry, index) => (
-        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-      ))}
-    </Pie>
-    <Tooltip />
-  </PieChart>
-</div>
-
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "25px" }}>
+          <PieChart width={320} height={280}>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              outerRadius={90}
+              fill="#8884d8"
+              dataKey="value"
+              label
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </div>
 
         {/* User stats (color cards) */}
-<div style={{ 
-  marginTop: "20px", 
-  display: "grid", 
-  gridTemplateColumns: "1fr 1fr 1fr", 
-  gap: "15px" 
-}}>
-  <div style={{ background: "linear-gradient(135deg, #6a11cb, #a4508b)", color: "white", padding: "15px", borderRadius: "10px" }}>
-    <h4>User ID</h4>
-    <p style={{ fontSize: "0.9rem", wordBreak: "break-all" }}>{data.user_id}</p>
-  </div>
-  <div style={{ background: "#0d6efd", color: "white", padding: "15px", borderRadius: "10px" }}>
-    <h4>Your Visits</h4>
-    <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{data.user_visits}</p>
-  </div>
-  <div style={{ background: "#198754", color: "white", padding: "15px", borderRadius: "10px" }}>
-    <h4>Last Visit</h4>
-    <p style={{ fontSize: "0.9rem" }}>{data.last_visit ? data.last_visit : "First visit!"}</p>
-  </div>
-</div>
-
+        <div
+          style={{
+            marginTop: "20px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "15px",
+          }}
+        >
+          <div
+            style={{
+              background: "linear-gradient(135deg, #6a11cb, #a4508b)",
+              color: "white",
+              padding: "15px",
+              borderRadius: "10px",
+            }}
+          >
+            <h4>User ID</h4>
+            <p style={{ fontSize: "0.9rem", wordBreak: "break-all" }}>{data.user_id}</p>
+          </div>
+          <div style={{ background: "#0d6efd", color: "white", padding: "15px", borderRadius: "10px" }}>
+            <h4>Your Visits</h4>
+            <p style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{data.user_visits}</p>
+          </div>
+          <div style={{ background: "#198754", color: "white", padding: "15px", borderRadius: "10px" }}>
+            <h4>Last Visit</h4>
+            <p style={{ fontSize: "0.9rem" }}>{data.last_visit ? data.last_visit : "First visit!"}</p>
+          </div>
+        </div>
 
         {/* Buttons */}
         <div style={{ marginTop: "25px", display: "flex", gap: "10px", justifyContent: "center" }}>
@@ -144,7 +167,7 @@ function App() {
               cursor: "pointer",
               transition: "0.3s",
             }}
-            onClick={fetchVisit}
+            onClick={incrementVisit} // ✅ changed
             onMouseOver={(e) => (e.target.style.background = "#0b5ed7")}
             onMouseOut={(e) => (e.target.style.background = "#0d6efd")}
           >

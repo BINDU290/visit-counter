@@ -121,6 +121,14 @@ def simulate_users():
 
     return jsonify(get_stats(user_id))
 
+@app.route("/stats", methods=["GET"])
+def get_all_stats():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "user_id required"}), 400
+    return jsonify(get_stats(user_id))
+
+
 # Serve React frontend
 @app.route("/")
 def serve_react():
